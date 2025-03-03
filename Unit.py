@@ -1,131 +1,162 @@
 import streamlit as st
+import google.generativeai as genai
+import os
+
+# handling gemini api key
+try:
+    GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
+    genai.configure(api_key=GEMINI_API_KEY)
+    model = genai.GenerativeModel("gemini-2.0-flash")
+except KeyError:
+    st.error("Gemini API key not found. Please add it to Streamlit secrets.")
+    st.stop()
+
 
 # Conversion functions
 def convert_length(value, from_unit, to_unit):
     length_units = {
-        "meters": 1,
-        "kilometers": 1 / 1000,
-        "centimeters": 100,
-        "millimeters": 1000,
-        "miles": 1 / 1609.34,
-        "yards": 1 / 0.9144,
-        "feet": 1 / 0.3048,
-        "inches": 1 / 0.0254,
-        "nautical miles": 1 / 1852,
+        "meters": 1.0,
+        "kilometers": 1000.0,
+        "centimeters": 0.01,
+        "millimeters": 0.001,
+        "miles": 1609.34,
+        "yards": 0.9144,
+        "feet": 0.3048,
+        "inches": 0.0254,
+        "nautical miles": 1852.0,
     }
-    return value * (length_units[to_unit] / length_units[from_unit])
+    meters = value * length_units[from_unit]
+    return meters / length_units[to_unit]
 
 
 def convert_area(value, from_unit, to_unit):
     area_units = {
-        "square meters": 1,
-        "square kilometers": 1 / 1e6,
-        "square centimeters": 1e4,
-        "square millimeters": 1e6,
-        "hectares": 1 / 10000,
-        "acres": 1 / 4046.86,
-        "square miles": 1 / 2.59e6,
-        "square yards": 1 / 0.836127,
-        "square feet": 1 / 0.092903,
-        "square inches": 1 / 0.00064516,
+        "square meters": 1.0,
+        "square kilometers": 1e6,
+        "square centimeters": 1e-4,
+        "square millimeters": 1e-6,
+        "hectares": 10000.0,
+        "acres": 4046.86,
+        "square miles": 2.59e6,
+        "square yards": 0.836127,
+        "square feet": 0.092903,
+        "square inches": 0.00064516,
     }
-    return value * (area_units[to_unit] / area_units[from_unit])
+    sq_meters = value * area_units[from_unit]
+    return sq_meters / area_units[to_unit]
 
 
 def convert_data_rate(value, from_unit, to_unit):
     data_rate_units = {
-        "bits per second": 1,
-        "kilobits per second": 1 / 1000,
-        "megabits per second": 1 / 1e6,
-        "gigabits per second": 1 / 1e9,
+        "bits per second": 1.0,
+        "kilobits per second": 1000.0,
+        "megabits per second": 1e6,
+        "gigabits per second": 1e9,
     }
-    return value * (data_rate_units[to_unit] / data_rate_units[from_unit])
+    bps = value * data_rate_units[from_unit]
+    return bps / data_rate_units[to_unit]
 
 
 def convert_digital_storage(value, from_unit, to_unit):
     storage_units = {
-        "bytes": 1,
-        "kilobytes": 1 / 1024,
-        "megabytes": 1 / (1024**2),
-        "gigabytes": 1 / (1024**3),
-        "terabytes": 1 / (1024**4),
+        "bytes": 1.0,
+        "kilobytes": 1024.0,
+        "megabytes": 1024.0**2,
+        "gigabytes": 1024.0**3,
+        "terabytes": 1024.0**4,
     }
-    return value * (storage_units[to_unit] / storage_units[from_unit])
+   
+    bytes_val = value * storage_units[from_unit]
+    return bytes_val / storage_units[to_unit]
 
 
 def convert_energy(value, from_unit, to_unit):
     energy_units = {
-        "joules": 1,
-        "kilojoules": 1 / 1000,
-        "calories": 1 / 4.184,
-        "kilocalories": 1 / 4184,
-        "watt-hours": 1 / 3600,
-        "kilowatt-hours": 1 / 3.6e6,
+        "joules": 1.0,
+        "kilojoules": 1000.0,
+        "calories": 4.184,
+        "kilocalories": 4184.0,
+        "watt-hours": 3600.0,
+        "kilowatt-hours": 3.6e6,
     }
-    return value * (energy_units[to_unit] / energy_units[from_unit])
+    
+    joules = value * energy_units[from_unit]
+    return joules / energy_units[to_unit]
 
 
 def convert_frequency(value, from_unit, to_unit):
     frequency_units = {
-        "hertz": 1,
-        "kilohertz": 1 / 1000,
-        "megahertz": 1 / 1e6,
-        "gigahertz": 1 / 1e9,
+        "hertz": 1.0,
+        "kilohertz": 1000.0,
+        "megahertz": 1e6,
+        "gigahertz": 1e9,
     }
-    return value * (frequency_units[to_unit] / frequency_units[from_unit])
+   
+    hertz = value * frequency_units[from_unit]
+    return hertz / frequency_units[to_unit]
 
 
 def convert_fuel_economy(value, from_unit, to_unit):
     fuel_units = {
-        "liters per 100 kilometers": 1,
+        "liters per 100 kilometers": 1.0,
         "miles per gallon (US)": 235.215,
         "miles per gallon (UK)": 282.481,
     }
-    return value * (fuel_units[to_unit] / fuel_units[from_unit])
+    
+    l_per_100km = value * fuel_units[from_unit]
+    return l_per_100km / fuel_units[to_unit]
 
 
 def convert_mass(value, from_unit, to_unit):
     mass_units = {
-        "grams": 1,
-        "kilograms": 1 / 1000,
-        "milligrams": 1000,
-        "micrograms": 1e6,
-        "pounds": 1 / 453.592,
-        "ounces": 1 / 28.3495,
-        "stones": 1 / 6350.29,
+        "grams": 1.0,
+        "kilograms": 1000.0,
+        "milligrams": 0.001,
+        "micrograms": 1e-6,
+        "pounds": 453.592,
+        "ounces": 28.3495,
+        "stones": 6350.29,
     }
-    return value * (mass_units[to_unit] / mass_units[from_unit])
+    
+    grams = value * mass_units[from_unit]
+    return grams / mass_units[to_unit]
 
 
 def convert_plane_angle(value, from_unit, to_unit):
     angle_units = {
-        "degrees": 1,
-        "radians": 1 / 57.2958,
+        "degrees": 1.0,
+        "radians": 57.2958,
     }
-    return value * (angle_units[to_unit] / angle_units[from_unit])
+
+    degrees = value * angle_units[from_unit]
+    return degrees / angle_units[to_unit]
 
 
 def convert_pressure(value, from_unit, to_unit):
     pressure_units = {
-        "pascals": 1,
-        "kilopascals": 1 / 1000,
-        "bars": 1 / 1e5,
-        "atmospheres": 1 / 101325,
-        "millimeters of mercury": 1 / 133.322,
-        "pounds per square inch": 1 / 6894.76,
+        "pascals": 1.0,
+        "kilopascals": 1000.0,
+        "bars": 1e5,
+        "atmospheres": 101325.0,
+        "millimeters of mercury": 133.322,
+        "pounds per square inch": 6894.76,
     }
-    return value * (pressure_units[to_unit] / pressure_units[from_unit])
+  
+    pascals = value * pressure_units[from_unit]
+    return pascals / pressure_units[to_unit]
 
 
 def convert_speed(value, from_unit, to_unit):
     speed_units = {
-        "meters per second": 1,
-        "kilometers per hour": 3.6,
-        "miles per hour": 1 / 0.44704,
-        "feet per second": 1 / 0.3048,
-        "knots": 1 / 0.514444,
+        "meters per second": 1.0,
+        "kilometers per hour": 1 / 3.6,  
+        "miles per hour": 0.44704,
+        "feet per second": 0.3048,
+        "knots": 0.514444,
     }
-    return value * (speed_units[to_unit] / speed_units[from_unit])
+   
+    mps = value * speed_units[from_unit]
+    return mps / speed_units[to_unit]
 
 
 def convert_temperature(value, from_unit, to_unit):
@@ -141,41 +172,66 @@ def convert_temperature(value, from_unit, to_unit):
         return (value - 32) * 5 / 9 + 273.15
     elif from_unit == "Kelvin" and to_unit == "Fahrenheit":
         return (value - 273.15) * 9 / 5 + 32
-    return value
+    return value 
 
 
 def convert_time(value, from_unit, to_unit):
     time_units = {
-        "seconds": 1,
-        "minutes": 1 / 60,
-        "hours": 1 / 3600,
-        "days": 1 / 86400,
-        "weeks": 1 / 604800,
+        "seconds": 1.0,
+        "minutes": 60.0,
+        "hours": 3600.0,
+        "days": 86400.0,
+        "weeks": 604800.0,
     }
-    return value * (time_units[to_unit] / time_units[from_unit])
+   
+    seconds = value * time_units[from_unit]
+    return seconds / time_units[to_unit]
 
 
 def convert_volume(value, from_unit, to_unit):
     volume_units = {
-        "cubic meters": 1,
-        "cubic kilometers": 1 / 1e9,
-        "cubic centimeters": 1e6,
-        "cubic millimeters": 1e9,
-        "liters": 1000,
-        "milliliters": 1e6,
-        "gallons (US)": 264.172,
-        "gallons (UK)": 219.969,
-        "fluid ounces (US)": 33814,
-        "fluid ounces (UK)": 35195.1,
+        "cubic meters": 1.0,
+        "cubic kilometers": 1e9,
+        "cubic centimeters": 1e-6,
+        "cubic millimeters": 1e-9,
+        "liters": 0.001,
+        "milliliters": 1e-6,
+        "gallons (US)": 0.00378541,
+        "gallons (UK)": 0.00454609,
+        "fluid ounces (US)": 2.95735e-5,
+        "fluid ounces (UK)": 2.84131e-5,
     }
-    return value * (volume_units[to_unit] / volume_units[from_unit])
+    
+    cubic_meters = value * volume_units[from_unit]
+    return cubic_meters / volume_units[to_unit]
 
 
-# Streamlit UI
-st.title("Unit Converter")
+def verify_with_gemini(value, from_unit, to_unit, result):
+    """
+    Verifies the unit conversion result using the Gemini API.
+    """
+    prompt = f"""
+    I have a unit conversion:
+    Value: {value}
+    From Unit: {from_unit}
+    To Unit: {to_unit}
+    Calculated Result: {result}
+
+    Is this conversion accurate?  Respond with only "Accurate" or "Inaccurate".
+    Explain your reasoning in one sentence.
+    """
+    try:
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        return f"Error during Gemini API call: {e}"
+
+
+
+st.title("Unit Converter with Gemini Verification")
 st.sidebar.header("Conversion Options")
 
-# Select category
+#  category
 category = st.sidebar.selectbox(
     "Select a category",
     [
@@ -196,10 +252,10 @@ category = st.sidebar.selectbox(
     ],
 )
 
-# Input value
+
 value = st.number_input("Enter the value to convert", value=0.0)
 
-# Select units based on category
+#  category condition
 if category == "Length":
     from_unit = st.selectbox(
         "From Unit",
@@ -436,6 +492,20 @@ elif category == "Volume":
         ],
     )
     result = convert_volume(value, from_unit, to_unit)
+else:
+    result = None  
 
-# Display result
-st.write(f"Converted value: {result} {to_unit}")
+
+if result is not None:
+    st.write(f"Converted value: {result} {to_unit}")
+
+    # Gemini Verification
+    if st.button("Verify with Gemini"):
+        with st.spinner("Verifying with Gemini..."):
+            gemini_response = verify_with_gemini(
+                value, from_unit, to_unit, result
+            )
+            st.write("Gemini Verification:")
+            st.write(gemini_response)
+else:
+    st.warning("Please select a category to perform the conversion.")
