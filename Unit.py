@@ -8,7 +8,7 @@ try:
     genai.configure(api_key=GEMINI_API_KEY)
     model = genai.GenerativeModel("gemini-2.0-flash")
 except KeyError:
-    st.error("Gemini API key not found. Please add it to Streamlit secrets.")
+    st.error("Gemini API key not found.. Please add it to Streamlit secrets.")
     st.stop()
 
 
